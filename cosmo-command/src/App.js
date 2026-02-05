@@ -4,25 +4,13 @@ import './App.css';
 const PASSWORD = 'cosmocommand1';
 const AUTH_KEY = 'cosmo_auth';
 const API_URL = 'https://geology-jose-joined-magazine.trycloudflare.com';
-const POLL_INTERVAL = 5000; // Poll every 5 seconds
+const POLL_INTERVAL = 5000;
 
-// Mock data for demo/fallback mode
-const generateMockData = () => {
-  const now = Date.now();
-  return {
-    nodes: [
-      { id: 'main', name: 'Cosmo', type: 'main', status: 'running' },
-      { id: 'agent-1', name: 'Research Agent', type: 'sub-agent', status: 'running', parentSession: 'main' },
-      { id: 'agent-2', name: 'Code Agent', type: 'sub-agent', status: 'running', parentSession: 'main' },
-    ],
-    links: [
-      { source: 'main', target: 'agent-1', active: true },
-      { source: 'main', target: 'agent-2', active: true },
-    ],
-    commands: [
-      { id: 1, content: 'Demo mode - connect to real-time API', sessionKey: 'agent-1', sessionName: 'System', status: 'running', timestamp: now },
-    ]
-  };
+// Empty initial state - no demo data
+const initialData = {
+  nodes: [{ id: 'main', name: 'Cosmo', type: 'main', status: 'running' }],
+  links: [],
+  commands: []
 };
 
 // Password Gate Component
@@ -181,13 +169,12 @@ const SimpleGraph = ({ data }) => {
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [graphData, setGraphData] = useState(generateMockData());
-  const [logs, setLogs] = useState([{ id: 1, time: new Date().toLocaleTimeString(), message: 'System initialized - Connecting to API...', type: 'info' }]);
+  const [graphData, setGraphData] = useState(initialData);
+  const [logs, setLogs] = useState([{ id: 1, time: new Date().toLocaleTimeString(), message: 'Connecting to API...', type: 'info' }]);
   const [activeAgents, setActiveAgents] = useState(0);
   const [activeTools, setActiveTools] = useState(0);
   const [showPanel, setShowPanel] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
-  const [isDemoMode, setIsDemoMode] = useState(false);
 
   // Check auth on mount
   useEffect(() => {
@@ -197,10 +184,8 @@ function App() {
     }
   }, []);
 
-  // Fetch real data from API
+  // Fetch real data from API - keeps trying, no fallback to demo
   const fetchData = useCallback(async () => {
-    if (isDemoMode) return;
-    
     try {
       const response = await fetch(`${API_URL}/api/sessions`, {
         method: 'GET',
@@ -210,22 +195,26 @@ function App() {
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       
       const data = await response.json();
-      setGraphData(data);
-      setIsConnected(true);
       
-      // Count active agents and tools
-      const agents = data.nodes?.filter(n => n.type === 'sub-agent' || n.type === 'cron').length || 0;
-      const tools = data.nodes?.filter(n => n.type === 'tool' && n.status === 'running').length || 0;
-      setActiveAgents(agents);
-      setActiveTools(tools);
-      
-      const now = new Date();
-      setLogs(prev => [{
-        id: Date.now(),
-        time: now.toLocaleTimeString(),
-        message: `Live: ${agents} agents, ${tools} tools`,
-        type: 'info'
-      }, ...prev].slice(0, 20));
+      // Only update if we got real data
+      if (data.nodes && data.nodes.length > 0) {
+        setGraphData(data);
+        setIsConnected(true);
+        
+        // Count active agents and tools
+        const agents = data.nodes.filter(n => n.type === 'sub-agent' || n.type === 'cron').length || 0;
+        const tools = data.nodes.filter(n => n.type === 'tool' && n.status === 'running').length || 0;
+        setActiveAgents(agents);
+        setActiveTools(tools);
+        
+        const now = new Date();
+        setLogs(prev => [{
+          id: Date.now(),
+          time: now.toLocaleTimeString(),
+          message: `Live: ${agents} agents, ${tools} tools`,
+          type: 'info'
+        }, ...prev].slice(0, 20));
+      }
       
     } catch (error) {
       console.error('API fetch failed:', error);
@@ -235,17 +224,11 @@ function App() {
       setLogs(prev => [{
         id: Date.now(),
         time: now.toLocaleTimeString(),
-        message: 'API unreachable - demo mode',
+        message: 'API unreachable - retrying...',
         type: 'error'
       }, ...prev].slice(0, 20));
-      
-      // Fall back to demo mode
-      if (!isDemoMode) {
-        setIsDemoMode(true);
-        setGraphData(generateMockData());
-      }
     }
-  }, [isDemoMode]);
+  }, []);
 
   // Poll for real-time updates
   useEffect(() => {
@@ -271,7 +254,7 @@ function App() {
           <span className="logo-icon">⚡</span>
           <h1 className="title">COSMO COMMAND</h1>
           <span className={`status-badge ${isConnected ? 'online' : 'offline'}`}>
-            {isConnected ? 'LIVE' : (isDemoMode ? 'DEMO' : 'OFFLINE')}
+            {isConnected ? 'LIVE' : 'CONNECTING...'}
           </span>
         </div>
         <div className="header-right">
@@ -308,17 +291,23 @@ function App() {
                 <span>COMMANDS</span>
               </div>
               <div className="commands-container">
-                {graphData.commands.map(cmd => (
-                  <div key={cmd.id} className="command-item">
-                    <div className="command-text">{cmd.content}</div>
-                    <div className="command-meta">
-                      <span className="command-agent">{cmd.sessionName}</span>
-                      <span className={`command-status ${cmd.status}`}>
-                        {cmd.status === 'running' ? '●' : '✓'}
-                      </span>
-                    </div>
+                {graphData.commands.length === 0 ? (
+                  <div className="command-item">
+                    <div className="command-text">Waiting for data...</div>
                   </div>
-                ))}
+                ) : (
+                  graphData.commands.map(cmd => (
+                    <div key={cmd.id} className="command-item">
+                      <div className="command-text">{cmd.content}</div>
+                      <div className="command-meta">
+                        <span className="command-agent">{cmd.sessionName}</span>
+                        <span className={`command-status ${cmd.status}`}>
+                          {cmd.status === 'running' ? '●' : '✓'}
+                        </span>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
 
