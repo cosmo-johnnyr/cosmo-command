@@ -187,7 +187,9 @@ function App() {
   // Fetch real data from API - keeps trying, no fallback to demo
   const fetchData = useCallback(async () => {
     try {
-      const response = await fetch(`${API_URL}/api/sessions`, {
+      // Add cache-busting timestamp
+      const cacheBuster = `?t=${Date.now()}`;
+      const response = await fetch(`${API_URL}/api/sessions${cacheBuster}`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' }
       });
