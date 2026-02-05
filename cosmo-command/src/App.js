@@ -3,7 +3,7 @@ import './App.css';
 
 const PASSWORD = 'cosmocommand1';
 const AUTH_KEY = 'cosmo_auth';
-const API_URL = 'https://geology-jose-joined-magazine.trycloudflare.com';
+const API_URL = 'https://hormone-maiden-cost-trained.trycloudflare.com';
 const POLL_INTERVAL = 5000; // Poll every 5 seconds
 
 // Mock data for demo/fallback mode

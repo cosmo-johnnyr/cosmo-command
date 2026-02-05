@@ -1,13 +1,13 @@
 {
   "files": {
     "main.css": "/cosmo-command/static/css/main.4a78a6f4.css",
-    "main.js": "/cosmo-command/static/js/main.0c2b2fd0.js",
+    "main.js": "/cosmo-command/static/js/main.8f393c16.js",
     "index.html": "/cosmo-command/index.html",
     "main.4a78a6f4.css.map": "/cosmo-command/static/css/main.4a78a6f4.css.map",
-    "main.0c2b2fd0.js.map": "/cosmo-command/static/js/main.0c2b2fd0.js.map"
+    "main.8f393c16.js.map": "/cosmo-command/static/js/main.8f393c16.js.map"
   },
   "entrypoints": [
     "static/css/main.4a78a6f4.css",
-    "static/js/main.0c2b2fd0.js"
+    "static/js/main.8f393c16.js"
   ]
 }
